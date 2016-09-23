@@ -1,0 +1,85 @@
+---
+title: "Reproducible Research: Assignment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r dependencies, echo = FALSE}
+library("ggplot2")
+```
+
+## Loading and preprocessing the data
+```{r loading and processing}
+fileName <- "activity.csv"
+if( !file.exists(fileName) ) unzip("activity.zip")
+activity <- read.csv(fileName, header = TRUE)
+activity$date <- as.Date(activity$date, "%Y-%m-%d")
+activity$interval <- as.factor(activity$interval)
+```
+
+
+## What is the mean total number of steps taken per day?
+Let's calculate the total number of steps taken each day. Missing values are removed. The histogram of this variable is shown below in red.
+```{r plot1}
+steps.total24h <- with(activity, tapply(steps, date, sum, na.rm = TRUE) )
+hist(steps.total24h, xlab = "Number of steps", main = "Total number of steps taken each day", col = "red")
+```
+
+The mean and median of the total of number of steps taken per day are `r format(mean(steps.total24h), nsmall = 1)` and `r median(steps.total24h)`, respectively.
+
+
+## What is the average daily activity pattern?
+We now calculate the average number of steps taken in each 5-minute interval across all days. The time serie is plotted below in red.
+```{r plot2}
+steps.average5min <- with(activity, tapply(steps, interval, mean, na.rm = TRUE) )
+with(activity, plot(levels(interval), steps.average5min, type = "l", lwd = 2, 
+                    xlab = "Interval", ylab = "Average number of steps", col = "red") )
+```
+
+The maximum number of steps occurs in interval indice `r which.max(steps.average5min)`, which corresponds to 5-minute interval `r names(which.max(steps.average5min)[1] )`. In this interval, the average number of steps taken is `r round(max(steps.average5min), 2)`.
+
+
+## Imputing missing values
+There are `r length(which(is.na(activity$steps)))` missing values in the data set. Those can easily be filled in using a simple procedure. To do so, we first identify the observations for which the number of steps is missing and then use the daily averaged number of steps taken in the associated 5-minute intervals to impute the missing values.
+```{r NA}
+activity_clean <- activity
+for(i in 1:nrow(activity) )
+    if(is.na(activity$steps[i]) ) activity_clean$steps[i] <- steps.average5min[activity_clean$interval[i]]
+
+```
+The histogram of the total number of steps taken each day is shown below in green. The data set with the imputed missing values has been used.
+```{r plot3}
+steps_clean.total24h <- with(activity_clean, tapply(steps, date, sum) )
+hist(steps_clean.total24h, col = "dark green", xlab = "Number of steps", 
+     main = "Total number of steps taken each day")
+```
+
+The mean and median of the total of number of steps taken per day are `r format(mean(steps_clean.total24h) )` and `r format(median(steps_clean.total24h) )`, respectively. These values differ from the ones previously obtained.
+
+Missing values were ignored in the first part of this assignment. As a result, days with a significant amount of missing values will have a low total number of steps and consequently will populate the lowest bin of the red histogram. To illustrate, `r length(which(steps.total24h == 0))` days over the `r length(steps.total24h)` considered in this analysis have a total number of steps equal to 0 since all the intervals in that days have missing values. This is shown below.
+```{r missing days}
+print(steps.total24h)
+```
+
+Now that we have imputed the missing values with the daily averaged number of steps taken in a 5-minute interval, the green histogram appears less skewed. Days with a significant fraction of missing values now populate the central bin. Consequently, the mean and the average have increased.
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+We will use the data set with filled-in missing values. We first create a new observable in the data set to identify whether an observation was taken during a weekday or weekend day.
+```{r daytype}
+days <- weekdays(activity_clean$date)
+activity_clean$daytype <- "weekday"
+activity_clean$daytype[days == "Saturday" | days == "Sunday"] <- "weekend"
+activity_clean$daytype <- as.factor(activity_clean$daytype)
+```
+We can now plot the time series of the 5-minute interval and the average number of steps taken, averaged across all weekday or weekend days.
+```{r plot4}
+steps.average5min.daytype <- aggregate(steps ~ interval + daytype, activity_clean, mean)
+ggplot(steps.average5min.daytype, aes(x = rep(as.numeric(levels(interval) ), 2), y = steps) ) + 
+    geom_line(col = "dark green", size = 0.75) + 
+    facet_grid(daytype ~ .) + 
+    labs(x = "Interval", y = "Average number of steps")
+```
+
+The two time series exhibit differences in activity pattern between weekdays and weekends.
