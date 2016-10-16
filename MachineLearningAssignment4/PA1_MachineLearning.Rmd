@@ -1,0 +1,139 @@
+---
+title: "Human Activity Recognition"
+author: "Benjamin Rouillé d'Orfeuil"
+date: "October 13, 2016"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Overview
+This project aims at predicting the manner in which a weight lifting exercise was performed. The data come from the accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in different fashions. According to the documentation available [here](http://groupware.les.inf.puc-rio.br/har#ixzz4N0qkUPtC), the quality of the execution of the exercise is divided in 5 classes that are listed below:
+
+* Class A: exactly according to the specification;
+* Class B: throwing the elbows to the front;
+* Class C: lifting the dumbbell only halfway;
+* Class D: lowering the dumbbell only halfway;
+* Class D: throwing the hips to the front.
+
+In order to come up with the best prediction model, we will go through the following steps. We first read and clean the data. We then divide the training data set into a training and validation data set. We then compare three sophisticated machine learning models. The three models built are classification tree, random forest and stochastic gradient boosting. We use a k-fold cross-validation to tune and evaluate each model. The out of sample error and various statistics are obtained on the validation data set. We select the best model and apply it to the testing data set.
+
+
+## Loading and Reading the Data
+Let's load and red the training and test data:
+```{r Load and Read Data}
+trainingFileName <- "pml-training.csv"
+if( !file.exists(trainingFileName) ) {
+    trainingFileURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+    download.file(trainingFileURL, trainingFileName, method = "curl")
+}
+
+testingFileName <- "pml-testing.csv"
+if( !file.exists(testingFileName) ) {
+    trainingFileURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+    download.file(testingFileURL, testingFileName, method = "curl")
+}
+
+training <- read.csv(trainingFileName, header = TRUE)
+testing <- read.csv(testingFileName, header = TRUE)
+```
+The training data set contains `r dim(training)[1]` observations of `r dim(training)[2]` variables. The testing data set encloses `r dim(testing)[1]` observations of the same variables.
+
+
+## Cleaning the Data
+We first remove the identification and time variables since they are not related to the **classe** variable that we want to predict and thus should not be used in the model.
+```{r Removing useless variables}
+training <- training[,-(1:7)]
+testing <- testing[,-(1:7)]
+```
+We now want to take a look at the variables with NA values in the testing data set.
+```{r NAs}
+NAs <- sapply(testing, function(x) mean(is.na(x) ) )
+length(which(NAs > 0) ) 
+min(NAs[NAs > 0])
+```
+There are `r length(which(NAs > 0) )` variables enclosing NA values. Besides, one can sees that the NA values represent 100% of the observations. We cannot impute the missing values and thus discard all `r length(which(NAs > 0) )` variables in both data set.
+```{r Removing variables with NAs}
+training <- training[,NAs == 0]
+testing <- testing[,NAs == 0]
+```
+We need to make sure that the training data set does not have other variables with NA values.
+```{r Checking}
+sum(complete.cases(training) ) == dim(training)[1]
+```
+There are no NA values left in the training data set. We will now partition the training data set.
+
+
+## Partioning the Training Data
+After the above cleaning procedure, the training data set is made of `r dim(training)[1]` observations of `r dim(training)[2]` variables. We want to partition this data set in a training (60% of the original data) and validation (remaining 40%) data set.
+```{r Partioning, warning = FALSE, message = FALSE}
+library("caret")
+inTrain <- createDataPartition(training$class, p = 0.6, list = FALSE)
+trainingSample <- training[inTrain,]
+validationSample <- training[-inTrain,]
+```
+The training sample will be used to tune the different models with cross-validation while the confusion matrix will be obtained on the validation sample.
+
+## Modeling
+We train the three machine earning models: classification tree, random forest and stochastic gradient boosting model to predict the manner in which the participants did the exercise (**classe** variable). We will use all `r dim(training)[2]-1` predictors to do so. For the training scheme, we will use a 5-fold cross-validation. We repeat the procedure 4 times in order to compare the accuracy distributions (20 values) between the models.
+```{r Fit Control}
+control <- trainControl(method = "repeatedcv", number = 5, repeats = 4)
+```
+We now train the three models.
+```{r Training, warning = FALSE, message = FALSE, cache = TRUE}
+set.seed(64)
+
+model_dt  <- train(classe ~ ., method = 'rpart', trControl = control, data = trainingSample)
+model_rf  <- train(classe ~ ., method = 'rf', trControl = control, data = trainingSample, ntree = 200)
+model_gbm <- train(classe ~ ., method = 'gbm', trControl = control, data = trainingSample, verbose = FALSE)
+```
+
+The accuracy distribution for each model, summarized in terms of percentiles, is shown below:
+```{r Accuracy}
+results <- resamples(list(DT = model_dt, RF = model_rf, GBM = model_gbm, RF = model_rf) )
+summary(results)
+```
+One can sees that the random forest is the model that performs the best. We will now use this model.
+
+
+## Validation
+Using the validation data sample, we extract the confusion matrix of the random forest model.
+```{r Confusion Matrix, warning = FALSE, message = FALSE}
+predict_validation <- predict(model_rf, newdata = validationSample)
+confusionMatrix(predict_validation, validationSample$classe)
+```
+The out of sample error of the random forest model is around 0.8%.
+
+
+## Testing
+We apply the random forest model to the testing dat set and print out the result.
+```{r Testing, warning = FALSE, message = FALSE}
+predict_testing <- predict(model_rf, newdata = testing)
+predict_testing
+```
+
+
+
+### Appendix
+* Correlation Matrix
+```{r Correlation Matrix, fig.height = 12, fig.width = 12}
+library("corrplot")
+M <- cor(trainingSample[,-dim(trainingSample)[2]])
+corrplot(M, method = 'pie', type = 'lower')
+```
+We observe very little correlations between predictors. For this reason we don't perform any pre-processing, such as a principal component Analysis (PCA), to reduce the number of predictors based on their correlation.
+
+* Accuracy of the Models
+```{r Accuracy Plot, fig.width = 7, fig.height = 5}
+bwplot(results)
+```
+
+* Vaiables of Importance for the Random Forest model
+```{r Vaiables of Importance, warning = FALSE, message = FALSE, fig.width = 5, fig.height = 8}
+plot(varImp(model_rf), top = 15)
+```
