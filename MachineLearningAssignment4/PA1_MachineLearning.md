@@ -152,33 +152,33 @@ confusionMatrix(predict_validation, validationSample$classe)
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 2230    6    0    0    0
-##          B    1 1512    2    0    0
-##          C    0    0 1366   10    1
-##          D    1    0    0 1276    2
+##          A 2230    8    0    0    0
+##          B    1 1510    2    0    0
+##          C    1    0 1364    9    0
+##          D    0    0    2 1277    3
 ##          E    0    0    0    0 1439
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.9971          
-##                  95% CI : (0.9956, 0.9981)
+##                Accuracy : 0.9967          
+##                  95% CI : (0.9951, 0.9978)
 ##     No Information Rate : 0.2845          
 ##     P-Value [Acc > NIR] : < 2.2e-16       
 ##                                           
-##                   Kappa : 0.9963          
+##                   Kappa : 0.9958          
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9991   0.9960   0.9985   0.9922   0.9979
-## Specificity            0.9989   0.9995   0.9983   0.9995   1.0000
-## Pos Pred Value         0.9973   0.9980   0.9920   0.9977   1.0000
-## Neg Pred Value         0.9996   0.9991   0.9997   0.9985   0.9995
+## Sensitivity            0.9991   0.9947   0.9971   0.9930   0.9979
+## Specificity            0.9986   0.9995   0.9985   0.9992   1.0000
+## Pos Pred Value         0.9964   0.9980   0.9927   0.9961   1.0000
+## Neg Pred Value         0.9996   0.9987   0.9994   0.9986   0.9995
 ## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
-## Detection Rate         0.2842   0.1927   0.1741   0.1626   0.1834
-## Detection Prevalence   0.2850   0.1931   0.1755   0.1630   0.1834
-## Balanced Accuracy      0.9990   0.9978   0.9984   0.9959   0.9990
+## Detection Rate         0.2842   0.1925   0.1738   0.1628   0.1834
+## Detection Prevalence   0.2852   0.1928   0.1751   0.1634   0.1834
+## Balanced Accuracy      0.9988   0.9971   0.9978   0.9961   0.9990
 ```
 The out of sample error of the random forest model is around 0.8%.
 
@@ -208,6 +208,7 @@ corrplot(M, method = 'pie', type = 'lower')
 ```
 
 ![](PA1_MachineLearning_files/figure-html/Correlation Matrix-1.png)<!-- -->
+
 We observe very little correlations between predictors. For this reason we don't perform any pre-processing, such as a principal component Analysis (PCA), to reduce the number of predictors based on their correlation.
 
 * Accuracy of the Models

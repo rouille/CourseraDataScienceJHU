@@ -126,6 +126,7 @@ library("corrplot")
 M <- cor(trainingSample[,-dim(trainingSample)[2]])
 corrplot(M, method = 'pie', type = 'lower')
 ```
+
 We observe very little correlations between predictors. For this reason we don't perform any pre-processing, such as a principal component Analysis (PCA), to reduce the number of predictors based on their correlation.
 
 * Accuracy of the Models
