@@ -21,11 +21,11 @@ This project aims at predicting the manner in which a weight lifting exercise wa
 * Class D: lowering the dumbbell only halfway;
 * Class D: throwing the hips to the front.
 
-In order to come up with the best prediction model, we will go through the following steps. We first read and clean the data. We then divide the training data set into a training and validation data set. We then compare three sophisticated machine learning models. The three models built are classification tree, random forest and stochastic gradient boosting. We use a k-fold cross-validation to tune and evaluate each model. The out of sample error and various statistics are obtained on the validation data set. We select the best model and apply it to the testing data set.
+In order to come up with the best prediction model, we will go through the following steps. We first read and clean the data. We then divide the training data set into a training and validation data set. We use a k-fold cross-validation to tune and evaluate three sophisticated machine learning models: classification tree, random forest and stochastic gradient boosting. The best model is selected and its out of sample error is estimated. We finally apply the model to the original testing data set.
 
 
 ## Loading and Reading the Data
-Let's load and red the training and test data:
+Let's load and read the training and test data set:
 ```{r Load and Read Data}
 trainingFileName <- "pml-training.csv"
 if( !file.exists(trainingFileName) ) {
@@ -42,16 +42,16 @@ if( !file.exists(testingFileName) ) {
 training <- read.csv(trainingFileName, header = TRUE)
 testing <- read.csv(testingFileName, header = TRUE)
 ```
-The training data set contains `r dim(training)[1]` observations of `r dim(training)[2]` variables. The testing data set encloses `r dim(testing)[1]` observations of the same variables.
+The training data set contains `r dim(training)[1]` observations of `r dim(training)[2]` variables. The test data set encloses `r dim(testing)[1]` observations of the same variables.
 
 
 ## Cleaning the Data
-We first remove the identification and time variables since they are not related to the **classe** variable that we want to predict and thus should not be used in the model.
+We first remove the identification and time variables from both data frames. Those are not related to the **classe** that we want to predict.
 ```{r Removing useless variables}
 training <- training[,-(1:7)]
 testing <- testing[,-(1:7)]
 ```
-We now want to take a look at the variables with NA values in the testing data set.
+Let's take a look at variables with NA values in the testing data set.
 ```{r NAs}
 NAs <- sapply(testing, function(x) mean(is.na(x) ) )
 length(which(NAs > 0) ) 
@@ -66,21 +66,21 @@ We need to make sure that the training data set does not have other variables wi
 ```{r Checking}
 sum(complete.cases(training) ) == dim(training)[1]
 ```
-There are no NA values left in the training data set. We will now partition the training data set.
+There are no NA values left in the training data set.
 
 
 ## Partioning the Training Data
-After the above cleaning procedure, the training data set is made of `r dim(training)[1]` observations of `r dim(training)[2]` variables. We want to partition this data set in a training (60% of the original data) and validation (remaining 40%) data set.
+The training data set is now made of `r dim(training)[1]` observations of `r dim(training)[2]` variables. We want to partition this data set in a training (60% of the original data) and validation (remaining 40%) data set.
 ```{r Partioning, warning = FALSE, message = FALSE}
 library("caret")
 inTrain <- createDataPartition(training$class, p = 0.6, list = FALSE)
 trainingSample <- training[inTrain,]
 validationSample <- training[-inTrain,]
 ```
-The training sample will be used to tune the different models with cross-validation while the confusion matrix will be obtained on the validation sample.
+The training sample will be used to tune and compare the models considered in this project while the validation sample will allow to estimate the out of sample error of the best model.
 
 ## Modeling
-We train the three machine earning models: classification tree, random forest and stochastic gradient boosting model to predict the manner in which the participants did the exercise (**classe** variable). We will use all `r dim(training)[2]-1` predictors to do so. For the training scheme, we will use a 5-fold cross-validation. We repeat the procedure 4 times in order to compare the accuracy distributions (20 values) between the models.
+A classification tree, random forest and stochastic gradient boosting model are used to predict the manner in which the participants did the exercise (**classe** variable). We will use all `r dim(training)[2]-1` predictors to do so. For the training scheme, we will use a 5-fold cross-validation. We repeat the procedure 4 times in order to compare the accuracy distributions (20 values) between the models.
 ```{r Fit Control}
 control <- trainControl(method = "repeatedcv", number = 5, repeats = 4)
 ```
@@ -93,7 +93,7 @@ model_rf  <- train(classe ~ ., method = 'rf', trControl = control, data = traini
 model_gbm <- train(classe ~ ., method = 'gbm', trControl = control, data = trainingSample, verbose = FALSE)
 ```
 
-The accuracy distribution for each model, summarized in terms of percentiles, is shown below:
+The accuracy distribution for each model is summarized below in terms of percentiles:
 ```{r Accuracy}
 results <- resamples(list(DT = model_dt, RF = model_rf, GBM = model_gbm, RF = model_rf) )
 summary(results)
@@ -110,8 +110,8 @@ confusionMatrix(predict_validation, validationSample$classe)
 The out of sample error of the random forest model is `r format(100 - 100*confusionMatrix(predict_validation, validationSample$classe)$overall[1], digits = 2, nsmall = 2)`%.
 
 
-## Testing
-We apply the random forest model to the testing dat set and print out the result.
+## Predicting the Test Set
+We apply the random forest model to the test data and print out the result.
 ```{r Testing, warning = FALSE, message = FALSE}
 predict_testing <- predict(model_rf, newdata = testing)
 predict_testing
@@ -134,7 +134,7 @@ We observe very little correlations between predictors. For this reason we don't
 bwplot(results)
 ```
 
-* Vaiables of Importance for the Random Forest model
+* Variables of Importance for the Random Forest Model
 ```{r Vaiables of Importance, warning = FALSE, message = FALSE, fig.width = 5, fig.height = 8}
 plot(varImp(model_rf), top = 15)
 ```

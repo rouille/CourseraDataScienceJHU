@@ -14,11 +14,11 @@ This project aims at predicting the manner in which a weight lifting exercise wa
 * Class D: lowering the dumbbell only halfway;
 * Class D: throwing the hips to the front.
 
-In order to come up with the best prediction model, we will go through the following steps. We first read and clean the data. We then divide the training data set into a training and validation data set. We then compare three sophisticated machine learning models. The three models built are classification tree, random forest and stochastic gradient boosting. We use a k-fold cross-validation to tune and evaluate each model. The out of sample error and various statistics are obtained on the validation data set. We select the best model and apply it to the testing data set.
+In order to come up with the best prediction model, we will go through the following steps. We first read and clean the data. We then divide the training data set into a training and validation data set. We use a k-fold cross-validation to tune and evaluate three sophisticated machine learning models: classification tree, random forest and stochastic gradient boosting. The best model is selected and its out of sample error is estimated. We finally apply the model to the original testing data set.
 
 
 ## Loading and Reading the Data
-Let's load and red the training and test data:
+Let's load and read the training and test data set:
 
 ```r
 trainingFileName <- "pml-training.csv"
@@ -36,17 +36,17 @@ if( !file.exists(testingFileName) ) {
 training <- read.csv(trainingFileName, header = TRUE)
 testing <- read.csv(testingFileName, header = TRUE)
 ```
-The training data set contains 19622 observations of 160 variables. The testing data set encloses 20 observations of the same variables.
+The training data set contains 19622 observations of 160 variables. The test data set encloses 20 observations of the same variables.
 
 
 ## Cleaning the Data
-We first remove the identification and time variables since they are not related to the **classe** variable that we want to predict and thus should not be used in the model.
+We first remove the identification and time variables from both data frames. Those are not related to the **classe** that we want to predict.
 
 ```r
 training <- training[,-(1:7)]
 testing <- testing[,-(1:7)]
 ```
-We now want to take a look at the variables with NA values in the testing data set.
+Let's take a look at variables with NA values in the testing data set.
 
 ```r
 NAs <- sapply(testing, function(x) mean(is.na(x) ) )
@@ -79,11 +79,11 @@ sum(complete.cases(training) ) == dim(training)[1]
 ```
 ## [1] TRUE
 ```
-There are no NA values left in the training data set. We will now partition the training data set.
+There are no NA values left in the training data set.
 
 
 ## Partioning the Training Data
-After the above cleaning procedure, the training data set is made of 19622 observations of 53 variables. We want to partition this data set in a training (60% of the original data) and validation (remaining 40%) data set.
+The training data set is now made of 19622 observations of 53 variables. We want to partition this data set in a training (60% of the original data) and validation (remaining 40%) data set.
 
 ```r
 library("caret")
@@ -91,10 +91,10 @@ inTrain <- createDataPartition(training$class, p = 0.6, list = FALSE)
 trainingSample <- training[inTrain,]
 validationSample <- training[-inTrain,]
 ```
-The training sample will be used to tune the different models with cross-validation while the confusion matrix will be obtained on the validation sample.
+The training sample will be used to tune and compare the models considered in this project while the validation sample will allow to estimate the out of sample error of the best model.
 
 ## Modeling
-We train the three machine earning models: classification tree, random forest and stochastic gradient boosting model to predict the manner in which the participants did the exercise (**classe** variable). We will use all 52 predictors to do so. For the training scheme, we will use a 5-fold cross-validation. We repeat the procedure 4 times in order to compare the accuracy distributions (20 values) between the models.
+A classification tree, random forest and stochastic gradient boosting model are used to predict the manner in which the participants did the exercise (**classe** variable). We will use all 52 predictors to do so. For the training scheme, we will use a 5-fold cross-validation. We repeat the procedure 4 times in order to compare the accuracy distributions (20 values) between the models.
 
 ```r
 control <- trainControl(method = "repeatedcv", number = 5, repeats = 4)
@@ -109,7 +109,7 @@ model_rf  <- train(classe ~ ., method = 'rf', trControl = control, data = traini
 model_gbm <- train(classe ~ ., method = 'gbm', trControl = control, data = trainingSample, verbose = FALSE)
 ```
 
-The accuracy distribution for each model, summarized in terms of percentiles, is shown below:
+The accuracy distribution for each model is summarized below in terms of percentiles:
 
 ```r
 results <- resamples(list(DT = model_dt, RF = model_rf, GBM = model_gbm, RF = model_rf) )
@@ -152,39 +152,39 @@ confusionMatrix(predict_validation, validationSample$classe)
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 2232    7    0    0    0
-##          B    0 1508    5    0    0
-##          C    0    3 1361   11    0
-##          D    0    0    2 1275    1
-##          E    0    0    0    0 1441
+##          A 2231    6    0    0    0
+##          B    1 1509    4    0    0
+##          C    0    3 1362    7    1
+##          D    0    0    2 1279    3
+##          E    0    0    0    0 1438
 ## 
 ## Overall Statistics
-##                                           
-##                Accuracy : 0.9963          
-##                  95% CI : (0.9947, 0.9975)
-##     No Information Rate : 0.2845          
-##     P-Value [Acc > NIR] : < 2.2e-16       
-##                                           
-##                   Kappa : 0.9953          
-##  Mcnemar's Test P-Value : NA              
+##                                          
+##                Accuracy : 0.9966         
+##                  95% CI : (0.995, 0.9977)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc > NIR] : < 2.2e-16      
+##                                          
+##                   Kappa : 0.9956         
+##  Mcnemar's Test P-Value : NA             
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9934   0.9949   0.9914   0.9993
-## Specificity            0.9988   0.9992   0.9978   0.9995   1.0000
-## Pos Pred Value         0.9969   0.9967   0.9898   0.9977   1.0000
-## Neg Pred Value         1.0000   0.9984   0.9989   0.9983   0.9998
+## Sensitivity            0.9996   0.9941   0.9956   0.9946   0.9972
+## Specificity            0.9989   0.9992   0.9983   0.9992   1.0000
+## Pos Pred Value         0.9973   0.9967   0.9920   0.9961   1.0000
+## Neg Pred Value         0.9998   0.9986   0.9991   0.9989   0.9994
 ## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
-## Detection Rate         0.2845   0.1922   0.1735   0.1625   0.1837
-## Detection Prevalence   0.2854   0.1928   0.1752   0.1629   0.1837
-## Balanced Accuracy      0.9994   0.9963   0.9964   0.9955   0.9997
+## Detection Rate         0.2843   0.1923   0.1736   0.1630   0.1833
+## Detection Prevalence   0.2851   0.1930   0.1750   0.1637   0.1833
+## Balanced Accuracy      0.9992   0.9966   0.9970   0.9969   0.9986
 ```
-The out of sample error of the random forest model is 0.37%.
+The out of sample error of the random forest model is 0.34%.
 
 
-## Testing
-We apply the random forest model to the testing dat set and print out the result.
+## Predicting the Test Set
+We apply the random forest model to the test data and print out the result.
 
 ```r
 predict_testing <- predict(model_rf, newdata = testing)
@@ -219,7 +219,7 @@ bwplot(results)
 
 ![](PA1_MachineLearning_files/figure-html/Accuracy Plot-1.png)<!-- -->
 
-* Vaiables of Importance for the Random Forest model
+* Variables of Importance for the Random Forest Model
 
 ```r
 plot(varImp(model_rf), top = 15)
