@@ -107,7 +107,7 @@ Using the validation data sample, we extract the confusion matrix of the random 
 predict_validation <- predict(model_rf, newdata = validationSample)
 confusionMatrix(predict_validation, validationSample$classe)
 ```
-The out of sample error of the random forest model is around 0.8%.
+The out of sample error of the random forest model is `r format(100 - 100*confusionMatrix(predict_validation, validationSample$classe)$overall[1], digits = 2, nsmall = 2)`%.
 
 
 ## Testing
