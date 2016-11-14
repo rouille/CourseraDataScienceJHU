@@ -18,13 +18,16 @@ shinyUI(fluidPage(
   sidebarLayout(
       sidebarPanel(width = 3,
           selectInput('category', 'Category', unique(prizes$category) ),
-          dateRangeInput("dates", "Date range", start = "1950-01-01", end = "2000-01-01", 
+          dateRangeInput("dates", "Award date range", start = "1950-01-01", end = "2000-01-01", 
+                         min = "1901-01-01", max = as.Date(Sys.Date() ),
                          startview = "decade", format = "yyyy" ),
           submitButton("submit")
           ),
     
       mainPanel(
           tabsetPanel(
+              tabPanel("Laureates", htmlOutput("laureates") ),
+              br(),
               tabPanel("Age", htmlOutput("bubble") ),
               br(),
               tabPanel("Gender", htmlOutput("pie") ),

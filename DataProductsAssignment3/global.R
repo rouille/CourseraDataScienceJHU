@@ -2,14 +2,15 @@ library(jsonlite)
 library(plyr)
 library(dplyr)
 library(googleVis)
-library(networkD3)
+library(curl)
 
 nobel  <- fromJSON("http://api.nobelprize.org/v1/laureate.json")
 prizes <- ldply(nobel$laureates$prizes, as.data.frame)
 
 count <- sapply(nobel$laureates$prizes, function(x) nrow(x) )
 
-prizes$id <- rep(nobel$laureates$id, count)
+prizes$firstname <- rep(nobel$laureates$firstname, count)
+prizes$lastname <- rep(nobel$laureates$surname, count)
 prizes$gender <- rep(nobel$laureates$gender, count)
 prizes$born <- rep(nobel$laureates$born, count)
 prizes$bornCountry <- rep(nobel$laureates$bornCountry, count)

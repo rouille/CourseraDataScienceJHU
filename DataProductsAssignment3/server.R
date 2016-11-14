@@ -8,7 +8,6 @@
 #
 
 library(shiny)
-library(ggplot2)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -18,9 +17,18 @@ shinyServer(function(input, output) {
                                    year >= as.character(input$dates[1]) & 
                                    year <= as.character(input$dates[2]) ) } )
     
+    # Laureates
+    laureates <- reactive({
+        name <- select(data(), firstname, lastname, year, share, motivation)
+        gvisTable(name, options = list(width = "2000",
+                                       height = "750",
+                                       page = "TRUE",
+                                       pageSize = 10) )
+    })
+    output$laureates <- renderGvis({laureates() } )
+    
     # Bubble Chart
     bubble <- reactive({
-        ylim = as.numeric(c(min(data()$year), max(data()$year) ) )
         gvisBubbleChart(data(), 
                         idvar = "bornCountryCode", 
                         xvar = "age", 
@@ -35,7 +43,7 @@ shinyServer(function(input, output) {
                                                      top:75,
                                                      width:'90%',
                                                      height:'90%'}",
-                                       vAxes = "[{viewWindowMode:'pretty',
+                                       vAxes = "[{viewWindowMode:'maximized',
                                                   title:'year',
                                                   format:'',
                                                   titleTextStyle:{fontSize:40}}]", 
@@ -74,13 +82,13 @@ shinyServer(function(input, output) {
         T <- gvisTable(country, options = list(width = "400",
                                                height = "400", 
                                                page = "TRUE",
-                                               pageSize = 10,
-                                               width = "500") )
+                                               pageSize = 10) )
         
         gvisMerge(M, T, horizontal = FALSE) 
     })
     output$map <- renderGvis({map() } )
     
+    # Sankey diagram
     sankey <- reactive({
         connection <- as.data.frame(table(data()$bornCountryCode, data()$diedCountryCode), stringsAsFactors = FALSE)
         migration <- subset(connection, Freq > 0 & Var1 != Var2)
