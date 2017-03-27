@@ -121,7 +121,7 @@ predict_testing
 
 ### Appendix
 * Correlation Matrix
-```{r Correlation Matrix, fig.height = 12, fig.width = 12}
+```{r CorrelationMatrix, fig.height = 12, fig.width = 12}
 library("corrplot")
 M <- cor(trainingSample[,-dim(trainingSample)[2]])
 corrplot(M, method = 'pie', type = 'lower')
@@ -130,11 +130,11 @@ corrplot(M, method = 'pie', type = 'lower')
 We observe very little correlations between predictors. For this reason we don't perform any pre-processing, such as a principal component Analysis (PCA), to reduce the number of predictors based on their correlation.
 
 * Accuracy of the Models
-```{r Accuracy Plot, fig.width = 7, fig.height = 5}
+```{r AccuracyPlot, fig.width = 7, fig.height = 5}
 bwplot(results)
 ```
 
 * Variables of Importance for the Random Forest Model
-```{r Vaiables of Importance, warning = FALSE, message = FALSE, fig.width = 5, fig.height = 8}
+```{r VaiablesOfImportance, warning = FALSE, message = FALSE, fig.width = 5, fig.height = 8}
 plot(varImp(model_rf), top = 15)
 ```
